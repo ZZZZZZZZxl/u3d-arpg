@@ -9,17 +9,15 @@ public class EnemyHitState : EnemyState
     {
     }
 
-
     #region IState Methods
-    
+
     public override void Enter()
     {
         _currentHitInfo = _stateMachine.ReusableData.HitInfo;
+        StopNavigation(true);
         base.Enter();
-        
-        // DevelopmentToos.WTF("敌人被你揍了");
     }
-    
+
     public override void OnAnimationTransition()
     {
         if (_stateMachine.Enemy.HealthController.IsDead)
@@ -41,16 +39,15 @@ public class EnemyHitState : EnemyState
         Enemy.Animator.SetTrigger(AnimationID.HitID);
         Enemy.Animator.SetBool(AnimationID.HeavyID, _currentHitInfo.Heavy);
         Enemy.Animator.SetBool(AnimationID.BeHittingID, true);
-        
+
         if (DevelopmentToos.IsTargetAtFront(_currentHitInfo.Attacker, _stateMachine.Enemy.transform, 200f))
         {
             Enemy.Animator.SetBool(AnimationID.FrontHitID, true);
             _stateMachine.Enemy.transform.Look(_currentHitInfo.Attacker.position, 5000f);
+            return;
         }
-        else
-        {
-            Enemy.Animator.SetBool(AnimationID.FrontHitID, false);
-        }
+
+        Enemy.Animator.SetBool(AnimationID.FrontHitID, false);
     }
 
     protected override void SetAnimationExitParameters()
@@ -62,7 +59,6 @@ public class EnemyHitState : EnemyState
 
     protected override void ChangeDieState()
     {
-        
     }
 
     #endregion

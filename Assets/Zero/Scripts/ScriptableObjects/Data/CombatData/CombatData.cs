@@ -12,7 +12,7 @@ public class CombatData : ScriptableObject
     [SerializeField] private float _detectionRadius = 0.5f;
     [SerializeField] private float _maxDetectionDistance = 8f;
     [SerializeField] private float _frontAreaAngle = 270f;
-    [SerializeField] protected float _attackDistance = 0f;
+    [SerializeField] protected float _attackDistance = 8f;
     
     public PlayerNormalAttackData PlayerNormalAttackData => _playerNormalAttackData;
     public PlayerSpecialAttackData SpecialAttackData => _specialAttackData;

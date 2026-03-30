@@ -14,7 +14,6 @@ public class PlayerNormalAttackingState : PlayerAttackingState
     
     private int _attackIndex;
     private List<float> _damageList;
-    private float _attackDistance;
     
     public PlayerNormalAttackingState(PlayerCombatStateMachine stateMachine) : base(stateMachine)
     {
@@ -22,7 +21,6 @@ public class PlayerNormalAttackingState : PlayerAttackingState
         _canInputAfterTimeRate = _combatData.PlayerNormalAttackData.CanInputAfterTimeRate;
         _rotationTime = _combatData.PlayerNormalAttackData.RotationTime;
         _damageList = _combatData.PlayerNormalAttackData.Damage;
-        DevelopmentToos.WTF(_attackDistance);
     }
 
     #region IState Methods
@@ -35,22 +33,29 @@ public class PlayerNormalAttackingState : PlayerAttackingState
         UpdateCurrentAttack();
         
         _stateMachine.ReusableData.ShouldRotate = false;
-        _stateMachine.ReusableData.CanAttack = true;
+        _stateMachine.ReusableData.CanDamage = false;
         _rotationPassTime = 0f;
     }
 
     public override void Update()
     {
         base.Update();
-        
+        Attack();
         UpdateRotation();
         UpdateAttackInfo();
         
     }
 
+    public override void PhysicsUpdate()
+    {
+        base.PhysicsUpdate();
+        
+        ModifyPosition();
+    }
+
     public override void OnAnimationEvent()
     {
-        _stateMachine.ReusableData.CanAttack = true;
+        _stateMachine.ReusableData.CanDamage = true;
     }
 
     public override void OnAnimationTransition()
@@ -109,7 +114,7 @@ public class PlayerNormalAttackingState : PlayerAttackingState
 
         _stateMachine.ReusableData.Damage = _damageList[_attackIndex];
         _stateMachine.ReusableData.Heavy = _combatData.PlayerNormalAttackData.HeavyAttack[_attackIndex];
-        _stateMachine.ReusableData.CanAttack = false;
+        _stateMachine.ReusableData.CanDamage = false;
     }
 
     
@@ -130,7 +135,6 @@ public class PlayerNormalAttackingState : PlayerAttackingState
         if (_stateMachine.Player.Animator.GetCurrentAnimatorStateInfo(0).normalizedTime < _canAttackAfterTimeRate) 
             return;
 
-        _stateMachine.ReusableData.CanAttack = true;
         
         if (_hasInputInThisAttack) // 攻击执行完之后 有输入无需切换状态 重新计时下一个
         {
@@ -145,10 +149,16 @@ public class PlayerNormalAttackingState : PlayerAttackingState
         if (!_stateMachine.ReusableData.CurrentEnemy)
             return false;
         
+        if (_combatData.AttackDistance > 10f)
+            return false;
+        
         float distance =
             DevelopmentToos.DistanceForTarget(_stateMachine.ReusableData.CurrentEnemy, _stateMachine.Player.transform);
-
-        if (distance > _attackDistance && distance < _attackDistance + 1f)
+        
+        if (distance > _combatData.AttackDistance && distance < _combatData.AttackDistance + 1f)
+            return true;
+        
+        if (distance < _combatData.AttackDistance)
             return true;
 
         return false;
@@ -162,7 +172,10 @@ public class PlayerNormalAttackingState : PlayerAttackingState
     protected override void StartDamage()
     {
         base.StartDamage();
-        
+    }
+
+    private void ModifyPosition()
+    {
         if (!CheckDistanceNeedModify())
             return;
 
@@ -170,7 +183,7 @@ public class PlayerNormalAttackingState : PlayerAttackingState
             return;
         
         ExcuteModify(_stateMachine.ReusableData.CurrentEnemy.position +
-                     (-_stateMachine.Player.transform.forward * _attackDistance));
+                     (-_stateMachine.Player.transform.forward * _combatData.AttackDistance));
     }
 
     protected override void SetEnterAnimationParameters()

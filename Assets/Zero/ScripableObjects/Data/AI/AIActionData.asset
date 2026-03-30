@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: AIActionData
   m_EditorClassIdentifier: 
   _detectionDistance: 15
-  _attackDistance: 2.5
-  _attackColdTime: 100
+  _attackDistance: 2
+  _attackColdTime: 1000
   _enemyIdleData:
     _timeToPatrol: 5
   _enemyPatrolData:
@@ -33,12 +33,12 @@ MonoBehaviour:
     _canAttackAfterTimeRate: 0.9
     AttackDistance:
     - values:
-      - 3
+      - 2.5
     - values:
       - 3
     - values:
-      - 5
-      - 10
+      - 3
+      - 3
   _groundLayer:
     serializedVersion: 2
     m_Bits: 8

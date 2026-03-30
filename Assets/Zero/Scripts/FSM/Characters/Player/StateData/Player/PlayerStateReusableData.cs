@@ -16,7 +16,6 @@ public class PlayerStateReusableData
     private bool _shouldRotate = true;
     
     // 战斗相关
-    private float _attackDistance; // 攻击范围
     private Transform _currentEnemy; // 当前目标敌人
     private bool _canChangeEnemy = true; // 是否可以切换目标敌人
     private Vector3 _detectionDirectrion; // 探测方向
@@ -24,7 +23,7 @@ public class PlayerStateReusableData
     private float _damage;
     private HitInfo _hitInfo = new HitInfo();
     private bool _reciveHit;
-    private bool _canAttack;
+    private bool _canDamage;
 
     public void ResetData()
     {
@@ -47,7 +46,6 @@ public class PlayerStateReusableData
     public ref float DampedTargetRotationVelocity => ref _dampedTargetRotationVelocity;
     public ref float DampedTargetRotationPassedTime => ref _dampedTargetRotationPassedTime;
     public ref bool ShouldRotate => ref _shouldRotate;
-    public ref float AttackDistance => ref _attackDistance;
     public ref Transform CurrentEnemy => ref _currentEnemy;
     public ref bool CanChangeEnemy => ref _canChangeEnemy;
     public ref Vector3 DetectionDirectrion => ref _detectionDirectrion;
@@ -55,5 +53,5 @@ public class PlayerStateReusableData
     public ref float Damage => ref _damage;
     public ref HitInfo HitInfo => ref _hitInfo;
     public ref bool ReciveHit => ref _reciveHit;
-    public ref bool CanAttack => ref _canAttack;
+    public ref bool CanDamage => ref _canDamage;
 }

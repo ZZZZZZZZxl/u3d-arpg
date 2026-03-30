@@ -8,6 +8,7 @@ public class EnemyDeadState : EnemyState
 
     public override void Enter()
     {
+        StopNavigation(true);
         base.Enter();
         DisableEnemyController();
     }
@@ -34,12 +35,10 @@ public class EnemyDeadState : EnemyState
 
     protected override void ChangeHitState()
     {
-        
     }
 
     protected override void ChangeDieState()
     {
-        
     }
 
     #endregion

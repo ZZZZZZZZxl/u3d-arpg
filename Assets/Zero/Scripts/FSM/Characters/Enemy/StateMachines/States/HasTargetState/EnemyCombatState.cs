@@ -1,19 +1,22 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using GGG.Tool;
 using UnityEngine;
-using UnityEngine.UIElements;
 
-public class EnemyCombatState:EnemyState
+public class EnemyCombatState : EnemyState
 {
+    private const float MatchTargetNormalizedTime = 0.35f;
+    private const float WallRaycastHeight = 0.5f;
+    private const float TargetModifyTolerance = 1f;
+
     private Transform Weapon => Enemy.Weapon;
-    
-    private List<AttackDistanceRow> _attackDistance;
+
+    private readonly List<AttackDistanceRow> _attackDistance;
+    private readonly float _canAttackAfterTimeRate;
     private int _attackIndex;
-    private float _canAttackAfterTimeRate;
     private bool _canAttack;
     private Vector3 _lastWeaponPos;
-    
+
     public EnemyCombatState(EnemyStateMachine stateMachine) : base(stateMachine)
     {
         _attackDistance = _aiActionData.EnemyCombatData.AttackDistance;
@@ -24,25 +27,23 @@ public class EnemyCombatState:EnemyState
 
     public override void Enter()
     {
+        StopNavigation(true);
         base.Enter();
 
         _attackIndex = 0;
         _canAttack = false;
         _lastWeaponPos = Weapon.position;
-        // DevelopmentToos.WTF("敌人开始攻击了");
     }
 
     public override void Update()
     {
         base.Update();
-
         UpdateAttack();
     }
 
     public override void Exit()
     {
         base.Exit();
-
         _stateMachine.ReusableData.AttackDistance = _aiActionData.AttackDistance;
     }
 
@@ -58,30 +59,31 @@ public class EnemyCombatState:EnemyState
 
     public override void PhysicsUpdate()
     {
-        if (!_canAttack)
-            return;
+        TryModifyPositionForWall();
         
-        if (_stateMachine.ReusableData.TargetPlayer == null)
+        TryModifyPositionForTarget();
+
+        if (!_canAttack || _stateMachine.ReusableData.TargetPlayer == null)
             return;
-        
+
         var player = _stateMachine.ReusableData.TargetPlayer.GetComponent<Player>();
         if (player == null)
             return;
 
-        if (Physics.Raycast(Weapon.position,
-                ((_stateMachine.ReusableData.TargetPlayer.position + 0.5f*_stateMachine.ReusableData.TargetPlayer.up) - Weapon.transform.position).normalized, out var hit,
-                1.5f))
-        {
-            Transform t = hit.transform;
-            while (t.parent != null)
-                t = t.parent;
+        Vector3 direction = ((_stateMachine.ReusableData.TargetPlayer.position + 0.5f * _stateMachine.ReusableData.TargetPlayer.up) - Weapon.position).normalized;
 
-            if (t.CompareTag("Player"))
-            {
-                TriggerDamageToPlayer(player);
-                _canAttack = false;
-            }
-        }
+        if (!Physics.Raycast(Weapon.position, direction, out var hit, 1.5f))
+            return;
+
+        Transform target = hit.transform;
+        while (target.parent != null)
+            target = target.parent;
+
+        if (!target.CompareTag("Player"))
+            return;
+
+        TriggerDamageToPlayer(player);
+        _canAttack = false;
     }
 
     #endregion
@@ -93,92 +95,77 @@ public class EnemyCombatState:EnemyState
             return;
 
         Vector3 start = Weapon.position;
-        Vector3 end = _stateMachine.ReusableData.TargetPlayer.position ;
+        Vector3 end = _stateMachine.ReusableData.TargetPlayer.position;
         Vector3 dir = (end - start).normalized;
-
-        // 射线长度（你 Physics.Raycast 里用的距离）
         float distance = 1f;
 
-        // 画射线
         Gizmos.color = Color.red;
         Gizmos.DrawLine(start, start + dir * distance);
 
-        // 可选：画射线终点球
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(start + dir * distance, 0.1f);
     }
-    
+
     #region Main Methods
 
     private void ResetCanAttack()
     {
         _canAttack = true;
     }
-    
+
     private void TriggerDamageToPlayer(Player player)
     {
         float damage = _aiActionData.EnemyCombatData.Damage[_attackIndex];
         bool heavy = _aiActionData.EnemyCombatData.HeavyAttack[_attackIndex];
-        Vector3 derection =
-            DevelopmentToos.DirectionForTarget(_stateMachine.ReusableData.TargetPlayer.transform, Enemy.transform);
-        
-        player.SetHitInfo(Enemy.transform, damage, derection, heavy);  
+        Vector3 direction = DevelopmentToos.DirectionForTarget(_stateMachine.ReusableData.TargetPlayer.transform, Enemy.transform);
+
+        player.SetHitInfo(Enemy.transform, damage, direction, heavy);
     }
-    
+
     private bool CheckAnimator()
     {
         if (Enemy.Animator.IsInTransition(0))
             return false;
-        if (Enemy.Animator.GetCurrentAnimatorStateInfo(0).normalizedTime < _canAttackAfterTimeRate)
-            return false;
-        
-        return true;
+
+        return Enemy.Animator.GetCurrentAnimatorStateInfo(0).normalizedTime >= _canAttackAfterTimeRate;
     }
-    
+
     private void UpdateAttack()
     {
         if (!CheckAnimator())
             return;
-        
-        // 先获得下一段攻击的信息
+
         UpdateAttackInfo();
-        
+
         if (_attackIndex == _attackDistance.Count)
             return;
-        
-        // 执行攻击
+
         if (AttackDistanceDetection())
-        {
             _stateMachine.Enemy.Animator.SetTrigger(AnimationID.NormalAttackID);
-        }
     }
 
     private void UpdateAttackInfo()
     {
-        // 更新下一个攻击的index
         UpdateAttackIndex();
 
         if (_attackIndex == _attackDistance.Count)
             return;
-        // 更新攻击状态
-        UpdateAnimatorInNormalAttack();
 
-        // 更新下一代段攻击的攻击距离
+        UpdateAnimatorInNormalAttack();
         UpdateReusableAttackDistance();
     }
 
     private void UpdateReusableAttackDistance()
     {
-        // 默认挑选最远的一个攻击，如果有更近的能打到敌人的就用更近的，然后切换nearAttack
         var distances = _attackDistance[_attackIndex];
         float usableDistance = distances.values.Max();
         Enemy.Animator.SetBool(AnimationID.NearAtttackID, false);
 
-        foreach (var distancesValue in distances.values)
+        foreach (float distance in distances.values)
         {
-            if (! AttackDistanceDetection(distancesValue))
+            if (!AttackDistanceDetection(distance))
                 return;
-            
+
             Enemy.Animator.SetBool(AnimationID.NearAtttackID, true);
         }
 
@@ -193,26 +180,84 @@ public class EnemyCombatState:EnemyState
 
     private void UpdateAttackIndex()
     {
-        _attackIndex ++;
+        _attackIndex++;
         if (_attackIndex == _attackDistance.Count)
-        {
             _stateMachine.ChangeState(_stateMachine.IdleState);
-        }
     }
 
-    
-    
+    private void TryModifyPositionForWall()
+    {
+        float attackDistance = Mathf.Max(_stateMachine.ReusableData.AttackDistance, 1f);
+        Vector3 rayOrigin = Enemy.transform.position + Vector3.up * WallRaycastHeight;
 
+        if (!Physics.Raycast(rayOrigin, Enemy.transform.forward, out var hitInfo, attackDistance))
+            return;
+
+        if (!hitInfo.collider.CompareTag("Envs"))
+            return;
+
+        Vector3 hitPoint = hitInfo.point;
+        hitPoint.y -= WallRaycastHeight;
+
+        ExecuteModify(hitPoint - Enemy.transform.forward * attackDistance, 0.5f);
+    }
+
+    private void TryModifyPositionForTarget()
+    {
+        if (!CheckDistanceNeedModify())
+            return;
+
+        if (Enemy.Animator.GetCurrentAnimatorStateInfo(0).normalizedTime > MatchTargetNormalizedTime)
+            return;
+
+        Transform targetPlayer = _stateMachine.ReusableData.TargetPlayer;
+        float attackDistance = _stateMachine.ReusableData.AttackDistance;
+
+        ExecuteModify(targetPlayer.position - Enemy.transform.forward * (attackDistance * 0.8f), 0.05f);
+    }
+
+    private bool CheckDistanceNeedModify()
+    {
+        Transform targetPlayer = _stateMachine.ReusableData.TargetPlayer;
+        if (targetPlayer == null)
+            return false;
+        if (_stateMachine.ReusableData.AttackDistance > 20f)
+            return false;
+
+        float attackDistance = _stateMachine.ReusableData.AttackDistance;
+        float distance = DevelopmentToos.DistanceForTarget(targetPlayer, Enemy.transform);
+
+        if (distance > attackDistance && distance < attackDistance + TargetModifyTolerance)
+            return true;
+        
+        if (distance < attackDistance)
+            return true;
+
+        return false;
+    }
+
+    private void ExecuteModify(Vector3 targetPosition, float normalizeTime = MatchTargetNormalizedTime)
+    {
+        if (Enemy.Animator.isMatchingTarget || Enemy.Animator.IsInTransition(0))
+            return;
+
+        Enemy.Animator.MatchTarget(
+            targetPosition,
+            Quaternion.identity,
+            AvatarTarget.Root,
+            new MatchTargetWeightMask(Vector3.one, 0f),
+            0f,
+            normalizeTime
+        );
+    }
 
     #endregion
 
 
     #region Reusable Methods
-    
-    
+
     protected override void ReciveHit()
     {
-        
     }
 
     protected override void SetAnimationEnterParameters()
@@ -229,15 +274,11 @@ public class EnemyCombatState:EnemyState
 
     protected override void ChangeCombatState()
     {
-        
     }
 
     protected override void ChangeIdleState()
     {
-        
     }
 
     #endregion
-    
-    
 }

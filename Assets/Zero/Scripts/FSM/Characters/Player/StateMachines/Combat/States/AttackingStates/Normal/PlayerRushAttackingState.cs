@@ -20,10 +20,17 @@ public class PlayerRushAttackingState : PlayerAttackingState
         InitData();
     }
 
+    public override void Update()
+    {
+        base.Update();
+        
+        Attack();
+    }
+
     private void InitData()
     {
 
-        _stateMachine.ReusableData.CanAttack = true;
+        _stateMachine.ReusableData.CanDamage = true;
         
         _stateMachine.ReusableData.Damage = _combatData.RushAttackingData.Damage;
         _stateMachine.ReusableData.Heavy = _combatData.RushAttackingData.Heavy;

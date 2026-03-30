@@ -3,9 +3,9 @@ using UnityEngine;
 
 public class EnemyIdleState : EnemyState
 {
-    private EnemyIdleData _data;
+    private readonly EnemyIdleData _data;
     private float _startTime;
-    
+
     public EnemyIdleState(EnemyStateMachine stateMachine) : base(stateMachine)
     {
         _data = _aiActionData.EnemyIdleData;
@@ -15,10 +15,8 @@ public class EnemyIdleState : EnemyState
 
     public override void Enter()
     {
+        StopNavigation(true);
         base.Enter();
-        
-        // DevelopmentToos.WTF("敌人进入静止状态");
-        
         _startTime = Time.time;
     }
 
@@ -27,19 +25,15 @@ public class EnemyIdleState : EnemyState
         base.Update();
 
         if (_startTime + _data.TimeToPatrol > Time.time)
+            return;
+
+        if (DevelopmentToos.DistanceForTarget(_stateMachine.Enemy.transform, _stateMachine.ReusableData.OriginPosition) > 2f)
         {
+            _stateMachine.ChangeState(_stateMachine.ReturnState);
             return;
         }
 
-        if (DevelopmentToos.DistanceForTarget(_stateMachine.Enemy.transform,
-                _stateMachine.ReusableData.OriginPosition) > 2f)
-        {
-            _stateMachine.ChangeState(_stateMachine.ReturnState);
-        }
-        else
-        {
-            _stateMachine.ChangeState(_stateMachine.PatrolState);
-        }
+        _stateMachine.ChangeState(_stateMachine.PatrolState);
     }
 
     #endregion
@@ -49,9 +43,7 @@ public class EnemyIdleState : EnemyState
 
     protected override void ChangeIdleState()
     {
-        
     }
 
     #endregion
-    
 }

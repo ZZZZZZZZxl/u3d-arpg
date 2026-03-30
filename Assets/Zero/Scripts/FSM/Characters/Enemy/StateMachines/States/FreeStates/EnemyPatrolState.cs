@@ -1,17 +1,15 @@
-﻿using GGG.Tool;
+using GGG.Tool;
 using UnityEngine;
+using UnityEngine.AI;
 
-public class EnemyPatrolState:EnemyState
+public class EnemyPatrolState : EnemyState
 {
     private readonly EnemyPatrolData _data;
-    private Vector2Int[] _moveDirections;
-    private int _moveIndex;
-    private float _moveDistance;
-    
+    private Vector3 _currentPatrolPoint;
+
     public EnemyPatrolState(EnemyStateMachine stateMachine) : base(stateMachine)
     {
         _data = _aiActionData.EnemyPatrolData;
-        _moveDirections = _data.MoveDirections;
     }
 
     #region IState Methods
@@ -19,18 +17,29 @@ public class EnemyPatrolState:EnemyState
     public override void Enter()
     {
         base.Enter();
-        
-        // DevelopmentToos.WTF("敌人开始四处巡逻");
 
-        _moveDistance = 0f;
-        SetTargetDirection();
+        TrySetPatrolDestination();
     }
 
     public override void Update()
     {
         base.Update();
 
-        MoveWithDirection();
+        if (_stateMachine.ReusableData.TargetPlayer != null)
+            return;
+
+        if (!UpdateNavigationDirection())
+        {
+            if (_stateMachine.Enemy.HasReachedDestination())
+                _stateMachine.ChangeState(_stateMachine.IdleState);
+
+            return;
+        }
+
+        Move();
+
+        if (_stateMachine.Enemy.HasReachedDestination())
+            _stateMachine.ChangeState(_stateMachine.IdleState);
     }
 
     #endregion
@@ -38,23 +47,25 @@ public class EnemyPatrolState:EnemyState
 
     #region Main Methods
 
-    private void SetTargetDirection()
+    private bool TrySetPatrolDestination()
     {
-        _stateMachine.ReusableData.TargetDirection = _moveDirections[_moveIndex];
-        _moveIndex ++;
-        if (_moveIndex == _moveDirections.Length)
-            _moveIndex = 0;
-    }
-    
-    private void MoveWithDirection()
-    {
-        _moveDistance += (_stateMachine.ReusableData.MoveDirection).magnitude;
-        Move();
+        Vector3 center = _stateMachine.ReusableData.OriginPosition;
+        float sampleDistance = Mathf.Max(1f, _data.PatrolDistance * 0.5f);
 
-        if (_moveDistance >= _data.PatrolDistance)
+        for (int i = 0; i < 6; i++)
         {
-            _stateMachine.ChangeState(_stateMachine.IdleState);
+            Vector2 randomOffset = Random.insideUnitCircle * _data.PatrolDistance;
+            Vector3 candidate = center + new Vector3(randomOffset.x, 0f, randomOffset.y);
+
+            if (!NavMesh.SamplePosition(candidate, out var hit, sampleDistance, NavMesh.AllAreas))
+                continue;
+
+            _currentPatrolPoint = hit.position;
+            return _stateMachine.Enemy.SetDestination(_currentPatrolPoint);
         }
+
+        _currentPatrolPoint = center;
+        return _stateMachine.Enemy.SetDestination(_currentPatrolPoint);
     }
 
     #endregion
@@ -62,7 +73,6 @@ public class EnemyPatrolState:EnemyState
 
     #region Reusable Methods
 
-    // 移动的parameters
     protected override void SetAnimationEnterParameters()
     {
         _stateMachine.Enemy.Animator.SetBool(AnimationID.WalkID, true);

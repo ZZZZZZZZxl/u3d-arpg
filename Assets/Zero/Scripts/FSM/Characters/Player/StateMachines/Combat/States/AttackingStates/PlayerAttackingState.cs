@@ -16,19 +16,18 @@ public class PlayerAttackingState : PlayerCombatState
     public override void Enter()
     {
         base.Enter();
-        _stateMachine.ReusableData.CanAttack = false;
+        _stateMachine.ReusableData.CanDamage = false;
     }
 
     public override void Update()
     {
         base.Update();
-        Attack();
         LookAtEnemy();
     }
 
     public override void Exit()
     {
-        _stateMachine.ReusableData.CanAttack = false;
+        _stateMachine.ReusableData.CanDamage = false;
         base.Exit();
     }
 
@@ -89,7 +88,6 @@ public class PlayerAttackingState : PlayerCombatState
         }
     }
 
-
     #endregion
 
 
@@ -97,12 +95,14 @@ public class PlayerAttackingState : PlayerCombatState
 
     protected virtual void Attack()
     {
-        if (!_stateMachine.ReusableData.CanAttack)
+        if (!_stateMachine.ReusableData.CanDamage)
             return;
 
         if (!_stateMachine.ReusableData.CurrentEnemy)
             return;
 
+        DevelopmentToos.WTF("有敌人，能造成伤害了");  
+        
         if (DevelopmentToos.DistanceForTarget(_stateMachine.ReusableData.CurrentEnemy, _stateMachine.Player.transform) >
             _combatData.AttackDistance)
             return;
@@ -116,9 +116,9 @@ public class PlayerAttackingState : PlayerCombatState
 
     protected virtual void StartDamage()
     {   
-        if (_stateMachine.ReusableData.CanAttack)
+        if (_stateMachine.ReusableData.CanDamage)
         {
-            _stateMachine.ReusableData.CanAttack = false;
+            _stateMachine.ReusableData.CanDamage = false;
             TriggerAttackDamage();
         }
     }

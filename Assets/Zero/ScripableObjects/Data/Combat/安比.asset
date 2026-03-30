@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: "\u5B89\u6BD4"
   m_EditorClassIdentifier: 
   _playerNormalAttackData:
-    _canAttackAfterTimeRate: 0.9
+    _canAttackAfterTimeRate: 0.8
     _canInputAfterTimeRate: 0.5
     _canRotateBeforeTimeRate: 0.3
     _rotationTime: 0.3
@@ -22,7 +22,7 @@ MonoBehaviour:
     - 2
     - 3
     - 4
-    _heavyAttack: 00000001
+    _heavyAttack: 00000000
   _specialAttackData:
     _canAttackTimeRate: 0.3
     _canInputTimeRate: 0.2
@@ -41,4 +41,4 @@ MonoBehaviour:
   _detectionRadius: 0.5
   _maxDetectionDistance: 8
   _frontAreaAngle: 270
-  _attackDistance: 1.2
+  _attackDistance: 1.3

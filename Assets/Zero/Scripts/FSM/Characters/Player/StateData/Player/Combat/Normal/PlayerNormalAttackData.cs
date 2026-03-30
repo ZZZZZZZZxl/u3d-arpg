@@ -5,7 +5,7 @@ using UnityEngine;
 [Serializable]
 public class PlayerNormalAttackData 
 {
-    [SerializeField] private float _canAttackAfterTimeRate = 0.9f;
+    [SerializeField] private float _canAttackAfterTimeRate = 0.8f;
     [SerializeField] private float _canInputAfterTimeRate = 0.5f;
     [SerializeField] private float _canRotateBeforeTimeRate = 0.3f;
     [SerializeField] private float _rotationTime = 0.3f;

@@ -1,6 +1,4 @@
-using System.Net.Sockets;
 using GGG.Tool;
-using UnityEditor;
 using UnityEngine;
 
 public abstract class EnemyState : IState
@@ -16,12 +14,11 @@ public abstract class EnemyState : IState
 
     protected Enemy Enemy => _stateMachine.Enemy;
 
-
     #region IState Methods
 
     public virtual void Enter()
     {
-        // DevelopmentToos.WTF("Enter " + GetType().Name);
+        // DevelopmentToos.WTF("IState Enter: " + GetType().Name);
         SetAnimationEnterParameters();
     }
 
@@ -32,7 +29,6 @@ public abstract class EnemyState : IState
 
     public virtual void Update()
     {
-        RotateToPlayer();
         PlayerDetection();
         ActionWithTargetPlayer();
         ReciveHit();
@@ -70,86 +66,62 @@ public abstract class EnemyState : IState
 
     protected virtual void ReciveHit()
     {
-        if (!_stateMachine.ReusableData.ReciveHit) return;
-        
-        _stateMachine.ReusableData.ReciveHit = false;
-        ExecuteChangeState();
-    }
+        if (!_stateMachine.ReusableData.ReciveHit)
+            return;
 
-    private void ExecuteChangeState()
-    {
+        _stateMachine.ReusableData.ReciveHit = false;
         ChangeHitState();
     }
-    
-    
+
     private void ReadMoveDirection()
     {
         _stateMachine.ReusableData.MoveDirection = DevelopmentToos.ModifyDirectionOnSlope(
-            _stateMachine.Enemy.MoveDirection, _stateMachine.Enemy.transform,
-            _stateMachine.Enemy.Controller.height * 0.85f, _aiActionData.GroundLayer);
+            _stateMachine.Enemy.MoveDirection,
+            _stateMachine.Enemy.transform,
+            _stateMachine.Enemy.Controller.height * 0.85f,
+            _aiActionData.GroundLayer
+        );
     }
-    
+
     private void HandleCombatAndApproach()
     {
-        // 检测到敌人了，它在攻击范围内与否的转换逻辑
         if (!AttackDistanceDetection())
         {
             ChangeApproachState();
+            return;
         }
-        else
-        {
-            // 1. 之前没攻击过可以攻击
-            if (_stateMachine.ReusableData.LastAttackTime == 0f)
-            {
-                _stateMachine.ReusableData.LastAttackTime = Time.time;
-                ChangeCombatState();
-                return;
-            }
-                
-            // 2. 之前攻击过 但是冷却时间到了 可以攻击
-            if (_stateMachine.ReusableData.LastAttackTime + _aiActionData.AttackColdTime < Time.time)
-            {
-                _stateMachine.ReusableData.LastAttackTime = Time.time;
-                ChangeCombatState();
-            }
-            else
-            {
-                // 冷却时间没到 但是到攻击范围内了 就用Idle待命
-                ChangeIdleState();
-            }
-        }
-    }
 
+        if (_stateMachine.ReusableData.LastAttackTime == 0f)
+        {
+            _stateMachine.ReusableData.LastAttackTime = Time.time;
+            ChangeCombatState();
+            return;
+        }
+
+        if (_stateMachine.ReusableData.LastAttackTime + _aiActionData.AttackColdTime < Time.time)
+        {
+            _stateMachine.ReusableData.LastAttackTime = Time.time;
+            ChangeCombatState();
+            return;
+        }
+
+        ChangeIdleState();
+    }
 
     private void TryToReturnState()
     {
-        // 目标敌人走出去了，切换回 走回原点状态
-        if (DevelopmentToos.DistanceForTarget
-                (_stateMachine.ReusableData.TargetPlayer, _stateMachine.Enemy.transform) 
-            > _aiActionData.DetectionDistance)
+        if (DevelopmentToos.DistanceForTarget(_stateMachine.ReusableData.TargetPlayer, _stateMachine.Enemy.transform) > _aiActionData.DetectionDistance)
         {
             _stateMachine.ReusableData.TargetPlayer = null;
             ChangeReturnState();
         }
     }
 
-    private void RotateToPlayer()
-    {
-        if (_stateMachine.ReusableData.TargetPlayer == null)
-            return;
-        
-        Enemy.transform.Look(_stateMachine.ReusableData.TargetPlayer.transform.position, 5000f);
-        Vector3 moveDirection = DevelopmentToos.DirectionForTarget(Enemy.transform, _stateMachine.ReusableData.TargetPlayer.transform);
-        moveDirection = DevelopmentToos.ModifyDirectionOnSlope(moveDirection, Enemy.transform, Enemy.Controller.height * 0.85f, _aiActionData.GroundLayer);
-        _stateMachine.ReusableData.MoveDirection.x = moveDirection.x;
-        _stateMachine.ReusableData.MoveDirection.y = moveDirection.z;
-    }
-
     #endregion
-    
-    
+
+
     #region Reusable Methods
-    
+
     protected virtual void ChangeDieState()
     {
         _stateMachine.ChangeState(_stateMachine.DeadState);
@@ -179,8 +151,7 @@ public abstract class EnemyState : IState
     {
         _stateMachine.ChangeState(_stateMachine.ReturnState);
     }
-    
-    
+
     protected virtual void ChangeIdleState()
     {
         _stateMachine.ChangeState(_stateMachine.IdleState);
@@ -188,124 +159,110 @@ public abstract class EnemyState : IState
 
     protected virtual void SetAnimationEnterParameters()
     {
-        
     }
-    
+
     protected virtual void SetAnimationExitParameters()
     {
-        
     }
-    
-    // 当出现了目标敌人的时候，调用这个函数管理
+
     protected virtual void ActionWithTargetPlayer()
     {
         if (!_stateMachine.ReusableData.TargetPlayer)
             return;
-        
+
         HandleCombatAndApproach();
         TryToReturnState();
     }
 
-    protected virtual void ActionInFreeState()
-    {
-        _stateMachine.ChangeState(_stateMachine.IdleState);
-    }
-
-    // 检测前方是否有玩家
     protected virtual void PlayerDetection()
     {
-        // 范围内有目标了就不更新了
         if (_stateMachine.ReusableData.TargetPlayer)
             return;
-        
-        // 距离最近的一个player
+
         Transform nearestPlayer = GetNearestPlayer();
         if (nearestPlayer == null)
             return;
-        
-        // 检测前方距离内是否有玩家
-        if (DevelopmentToos.DistanceForTarget(nearestPlayer, _stateMachine.Enemy.transform) <=
-            _aiActionData.DetectionDistance &&
-            DevelopmentToos.IsTargetAtFront(nearestPlayer, _stateMachine.Enemy.transform, 180f))
-        {
-            Transform t = nearestPlayer.transform;
 
-            while (t.parent != null)
-            {
-                t = t.parent;
-            }
-            
-            _stateMachine.ReusableData.TargetPlayer = t;
-        }
+        if (DevelopmentToos.DistanceForTarget(nearestPlayer, _stateMachine.Enemy.transform) > _aiActionData.DetectionDistance)
+            return;
+
+        if (!DevelopmentToos.IsTargetAtFront(nearestPlayer, _stateMachine.Enemy.transform, 180f))
+            return;
+
+        Transform root = nearestPlayer.transform;
+        while (root.parent != null)
+            root = root.parent;
+
+        _stateMachine.ReusableData.TargetPlayer = root;
     }
 
-    
     protected virtual bool AttackDistanceDetection(float attackDistance = -1f)
     {
         if (_stateMachine.ReusableData.TargetPlayer == null)
-        {
             return false;
+
+        if (attackDistance < 0f)
+        {
+            if (DevelopmentToos.DistanceForTarget(_stateMachine.ReusableData.TargetPlayer, _stateMachine.Enemy.transform) > _stateMachine.ReusableData.AttackDistance + .2f)
+                return false;
+
+            if (!DevelopmentToos.IsTargetAtFront(_stateMachine.ReusableData.TargetPlayer, _stateMachine.Enemy.transform, 240f))
+                return false;
+
+            Vector3 direction = DevelopmentToos.DirectionForTarget(Enemy.transform, _stateMachine.ReusableData.TargetPlayer.transform);
+            _stateMachine.ReusableData.TargetDirection = new Vector2(direction.x, direction.z);
+            return true;
         }
 
-        if (attackDistance < 0)
-        {
-            if (DevelopmentToos.DistanceForTarget(_stateMachine.ReusableData.TargetPlayer,
-                    _stateMachine.Enemy.transform) <=
-                _stateMachine.ReusableData.AttackDistance &&
-                DevelopmentToos.IsTargetAtFront(_stateMachine.ReusableData.TargetPlayer, _stateMachine.Enemy.transform,
-                    240f))
-            {
-                _stateMachine.ReusableData.TargetDirection =
-                    DevelopmentToos.DirectionForTarget(Enemy.transform, _stateMachine.ReusableData.TargetPlayer.transform);
-            
-                return true;
-            }
-        }
-        else
-        {
-            if (DevelopmentToos.DistanceForTarget(_stateMachine.ReusableData.TargetPlayer, _stateMachine.Enemy.transform) <=
-                attackDistance &&
-                DevelopmentToos.IsTargetAtFront(_stateMachine.ReusableData.TargetPlayer, _stateMachine.Enemy.transform,
-                    180f))
-                return true;
-        }
-
-        return false;
+        return DevelopmentToos.DistanceForTarget(_stateMachine.ReusableData.TargetPlayer, _stateMachine.Enemy.transform) <= attackDistance + .2f
+               && DevelopmentToos.IsTargetAtFront(_stateMachine.ReusableData.TargetPlayer, _stateMachine.Enemy.transform, 180f);
     }
 
     protected Transform GetNearestPlayer()
     {
-        GameObject[] player = ObjectsManager.MainInstance.Players;
-        
-        float minDistance = -1;
+        GameObject[] players = ObjectsManager.MainInstance.Players;
+
+        float minDistance = -1f;
         Transform nearestPlayer = null;
-        
-        foreach (var item in player)
+
+        foreach (GameObject player in players)
         {
-            float distance = DevelopmentToos.DistanceForTarget(
-                _stateMachine.Enemy.transform, item.transform);
+            float distance = DevelopmentToos.DistanceForTarget(_stateMachine.Enemy.transform, player.transform);
 
-            if (nearestPlayer == null)
+            if (nearestPlayer == null || distance < minDistance)
             {
-                nearestPlayer = item.transform;
-                minDistance = distance;
-            }
-
-            if (distance < minDistance)
-            {
-                nearestPlayer = item.transform;
+                nearestPlayer = player.transform;
                 minDistance = distance;
             }
         }
-        
+
         return nearestPlayer;
+    }
+
+    protected bool UpdateNavigationDirection()
+    {
+        Vector2 steeringDirection = _stateMachine.Enemy.GetSteeringDirection();
+
+        if (steeringDirection == Vector2.zero)
+            return false;
+
+        _stateMachine.ReusableData.TargetDirection = steeringDirection;
+        return true;
+    }
+
+    protected void StopNavigation(bool clearDirection = false)
+    {
+        _stateMachine.Enemy.StopAgent();
+
+        if (clearDirection)
+            _stateMachine.ReusableData.TargetDirection = Vector2.zero;
     }
 
     protected void Move()
     {
         _stateMachine.Enemy.Controller.Move(_stateMachine.ReusableData.MoveDirection * Time.deltaTime);
+        _stateMachine.Enemy.SyncAgentPosition();
     }
 
-    
     #endregion
 }

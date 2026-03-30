@@ -245,21 +245,21 @@ ModelImporter:
       bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
       curves: []
       events:
-      - time: 0.067457855
+      - time: 0.046768207
         functionName: TriggerOnCombatStateAnimationEvent
         data: 
         objectReferenceParameter: {instanceID: 0}
         floatParameter: 0
         intParameter: 0
         messageOptions: 0
-      - time: 0.13366647
+      - time: 0.122172214
         functionName: TriggerOnCombatStateAnimationEvent
         data: 
         objectReferenceParameter: {instanceID: 0}
         floatParameter: 0
         intParameter: 0
         messageOptions: 0
-      - time: 0.24921906
+      - time: 0.23312709
         functionName: TriggerOnCombatStateAnimationEvent
         data: 
         objectReferenceParameter: {instanceID: 0}
@@ -533,7 +533,7 @@ ModelImporter:
       bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
       curves: []
       events:
-      - time: 0.066833235
+      - time: 0.053040147
         functionName: TriggerOnCombatStateAnimationEvent
         data: 
         objectReferenceParameter: {instanceID: 0}
@@ -713,7 +713,7 @@ ModelImporter:
       bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
       curves: []
       events:
-      - time: 0.08182386
+      - time: 0.07262847
         functionName: TriggerOnCombatStateAnimationEvent
         data: 
         objectReferenceParameter: {instanceID: 0}
@@ -843,14 +843,14 @@ ModelImporter:
       bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
       curves: []
       events:
-      - time: 0.10430981
+      - time: 0.08821786
         functionName: TriggerOnCombatStateAnimationEvent
         data: 
         objectReferenceParameter: {instanceID: 0}
         floatParameter: 0
         intParameter: 0
         messageOptions: 0
-      - time: 0.17676452
+      - time: 0.15837371
         functionName: TriggerOnCombatStateAnimationEvent
         data: 
         objectReferenceParameter: {instanceID: 0}

@@ -4,6 +4,7 @@ using UnityEngine.AI;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(EnemyHealthController))]
+[RequireComponent(typeof(NavMeshAgent))]
 public class Enemy : MonoBehaviour
 {
     
@@ -16,7 +17,7 @@ public class Enemy : MonoBehaviour
     private CharacterController _characterController;
     private EnemyReusableData _reusableData;
     private Vector3 _moveDirection;
-    // private NavMeshAgent _agent;
+    private NavMeshAgent _agent;
 
     public EnemyStateMachine EnemyStateMachine => _stateMachine;
     public EnemyHealthController HealthController => _healthController;
@@ -26,6 +27,7 @@ public class Enemy : MonoBehaviour
     public AIActionData Data => _aiActionData;
     public Vector3 MoveDirection => _moveDirection;
     public Transform Weapon => _weapon;
+    public NavMeshAgent Agent => _agent;
 
     #region Unity Methods
 
@@ -33,9 +35,9 @@ public class Enemy : MonoBehaviour
     {
         _reusableData = new EnemyReusableData();
         
-        // _agent = GetComponent<NavMeshAgent>();
-        // _agent.updatePosition = false;
-        // _agent.updateRotation = false;
+        _agent = GetComponent<NavMeshAgent>();
+        _agent.updatePosition = false;
+        _agent.updateRotation = false;
         
         _healthController = GetComponent<EnemyHealthController>();
         _animator = GetComponent<Animator>();
@@ -49,12 +51,14 @@ public class Enemy : MonoBehaviour
         
         _stateMachine.ChangeState(_stateMachine.IdleState);
         ReusableData.TimeToReachTargetRotation = _aiActionData.TargetRotationReachTime;
+        SyncAgentPosition(true);
     }
 
     private void Update()
     {
         _stateMachine.HandleInput();
         _stateMachine.Update();
+        SyncAgentPosition();
     }
 
     private void FixedUpdate()
@@ -78,6 +82,91 @@ public class Enemy : MonoBehaviour
 
     #region AI
 
+    public bool SetDestination(Vector3 destination)
+    {
+        if (!EnsureAgentOnNavMesh())
+            return false;
+
+        _agent.isStopped = false;
+        return _agent.SetDestination(destination);
+    }
+
+    public Vector2 GetSteeringDirection()
+    {
+        if (!EnsureAgentOnNavMesh() || _agent.pathPending || !_agent.hasPath)
+            return Vector2.zero;
+
+        Vector3 offset = _agent.steeringTarget - transform.position;
+        offset.y = 0f;
+
+        if (offset.sqrMagnitude < 0.0001f)
+            return Vector2.zero;
+
+        return new Vector2(offset.x, offset.z).normalized;
+    }
+
+    public bool HasReachedDestination(float threshold = 0.35f)
+    {
+        if (!EnsureAgentOnNavMesh())
+            return true;
+
+        if (_agent.pathPending)
+            return false;
+
+        if (_agent.pathStatus == NavMeshPathStatus.PathInvalid)
+            return true;
+
+        float stoppingDistance = Mathf.Max(_agent.stoppingDistance, threshold);
+
+        if (_agent.hasPath && _agent.remainingDistance > stoppingDistance)
+            return false;
+
+        Vector3 offset = _agent.destination - transform.position;
+        offset.y = 0f;
+        return offset.sqrMagnitude <= threshold * threshold;
+    }
+
+    public void StopAgent()
+    {
+        if (_agent == null || !_agent.enabled || !_agent.isOnNavMesh)
+            return;
+
+        _agent.isStopped = true;
+
+        if (_agent.hasPath)
+            _agent.ResetPath();
+    }
+
+    public void SyncAgentPosition(bool forceWarp = false)
+    {
+        if (_agent == null || !_agent.enabled)
+            return;
+
+        if (!EnsureAgentOnNavMesh(4f))
+            return;
+
+        if (forceWarp || (_agent.nextPosition - transform.position).sqrMagnitude > 1f)
+        {
+            _agent.Warp(transform.position);
+            return;
+        }
+
+        _agent.nextPosition = transform.position;
+    }
+
+    private bool EnsureAgentOnNavMesh(float sampleDistance = 2f)
+    {
+        if (_agent == null || !_agent.enabled)
+            return false;
+
+        if (_agent.isOnNavMesh)
+            return true;
+
+        if (!NavMesh.SamplePosition(transform.position, out var hit, sampleDistance, NavMesh.AllAreas))
+            return false;
+
+        return _agent.Warp(hit.position);
+    }
 
 
     #endregion
