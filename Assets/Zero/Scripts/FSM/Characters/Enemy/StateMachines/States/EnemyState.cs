@@ -75,12 +75,13 @@ public abstract class EnemyState : IState
 
     private void ReadMoveDirection()
     {
-        _stateMachine.ReusableData.MoveDirection = DevelopmentToos.ModifyDirectionOnSlope(
-            _stateMachine.Enemy.MoveDirection,
-            _stateMachine.Enemy.transform,
-            _stateMachine.Enemy.Controller.height * 0.85f,
-            _aiActionData.GroundLayer
-        );
+        // _stateMachine.ReusableData.MoveDirection = DevelopmentToos.ModifyDirectionOnSlope(
+        //     _stateMachine.Enemy.MoveDirection,
+        //     _stateMachine.Enemy.transform,
+        //     _stateMachine.Enemy.Controller.height * 0.85f,
+        //     _aiActionData.GroundLayer
+        // );
+        _stateMachine.ReusableData.MoveDirection = _stateMachine.Enemy.MoveDirection;
     }
 
     private void HandleCombatAndApproach()

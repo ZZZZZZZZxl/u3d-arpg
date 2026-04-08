@@ -75,10 +75,8 @@ public class PlayerMovementState : IState
     
     private void Move()
     {
-        Vector3 moveDirection = GetMoveDirection();
-        moveDirection = DevelopmentToos.ModifyDirectionOnSlope(moveDirection, _stateMachine.Player.transform,
-            _stateMachine.Player.Controller.height * 0.85f, _movementData.GroundLayer);
-        _stateMachine.Player.Controller.Move(moveDirection * Time.deltaTime);
+        // Vector3 moveDirection = GetMoveDirection();
+        // _stateMachine.Player.Controller.Move(moveDirection * Time.deltaTime);
     }
     
     private void ReceiveHit()
@@ -93,11 +91,6 @@ public class PlayerMovementState : IState
 
 
     #region Reusable Methods
-
-    protected Vector3 GetMoveDirection()
-    {
-        return _stateMachine.Player.MoveDirection;
-    }
     
     protected virtual void SetAnimatorParameters()
     {

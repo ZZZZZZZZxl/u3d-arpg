@@ -173,20 +173,12 @@ namespace GGG.Tool
         /// <param name="detectionDistance"></param>
         /// <param name="groundLayer"></param>
         /// <returns></returns>
-        public static Vector3 ModifyDirectionOnSlope(Vector3 moveDirection, Transform originTransform, float detectionDistance, LayerMask groundLayer)
+        public static Vector3 ModifyDirectionOnSlope(Vector3 moveDirection, Transform originTransform, float maxDistance,LayerMask groundLayer)
         {
-
-            /*
-             * 当移动方向与坡道方向不一致时，一定会导致角色与坡道不贴合，如此导致角色悬空，这样会使重力影响角色速度，最终导致速度非常大。
-             * 解决办法：当遇到斜坡时候，如果斜坡不为垂直方向，则将角色的移动方向投影到斜坡平面上，从而保证角色与斜坡贴合。
-             */
-            // 1. 首先检测是否有斜坡
-            if (Physics.Raycast(originTransform.position + (originTransform.up * 0.5f) ,Vector3.down, out var hit, detectionDistance, groundLayer))
+            if (Physics.Raycast(originTransform.position + (originTransform.up * .5f) ,Vector3.down, out var hit, maxDistance, groundLayer, QueryTriggerInteraction.Ignore))
             {
-                // 2. 检测是否为斜坡
                 if ( Vector3.Dot(Vector3.up, hit.normal) != 0 )
                 {
-                    // 将方向投影到斜坡平面上
                     moveDirection = Vector3.ProjectOnPlane(moveDirection, hit.normal);
                 }
             }

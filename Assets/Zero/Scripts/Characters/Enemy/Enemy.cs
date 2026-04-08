@@ -1,11 +1,10 @@
-using System;
 using UnityEngine;
 using UnityEngine.AI;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(EnemyHealthController))]
 [RequireComponent(typeof(NavMeshAgent))]
-public class Enemy : MonoBehaviour
+public class Enemy : CharacterMovementBase
 {
     
     [SerializeField] private AIActionData _aiActionData;
@@ -13,8 +12,6 @@ public class Enemy : MonoBehaviour
     
     private EnemyStateMachine _stateMachine;
     private EnemyHealthController _healthController;
-    private Animator _animator;
-    private CharacterController _characterController;
     private EnemyReusableData _reusableData;
     private Vector3 _moveDirection;
     private NavMeshAgent _agent;
@@ -22,17 +19,18 @@ public class Enemy : MonoBehaviour
     public EnemyStateMachine EnemyStateMachine => _stateMachine;
     public EnemyHealthController HealthController => _healthController;
     public Animator Animator => _animator;
-    public CharacterController Controller => _characterController;
     public EnemyReusableData ReusableData => _reusableData;
     public AIActionData Data => _aiActionData;
     public Vector3 MoveDirection => _moveDirection;
     public Transform Weapon => _weapon;
+    public CharacterController Controller => _controller;
     public NavMeshAgent Agent => _agent;
 
     #region Unity Methods
 
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         _reusableData = new EnemyReusableData();
         
         _agent = GetComponent<NavMeshAgent>();
@@ -41,12 +39,13 @@ public class Enemy : MonoBehaviour
         
         _healthController = GetComponent<EnemyHealthController>();
         _animator = GetComponent<Animator>();
-        _characterController = GetComponent<CharacterController>();
         _stateMachine = new EnemyStateMachine(this);
     }
 
-    private void Start()
+    protected override void Start()
     {
+        base.Start();
+        
         _reusableData.OriginPosition = _stateMachine.Enemy.transform.position;
         
         _stateMachine.ChangeState(_stateMachine.IdleState);
@@ -54,28 +53,22 @@ public class Enemy : MonoBehaviour
         SyncAgentPosition(true);
     }
 
-    private void Update()
+    protected override void Update()
     {
+        base.Update();
+        
         _stateMachine.HandleInput();
         _stateMachine.Update();
         SyncAgentPosition();
     }
 
-    private void FixedUpdate()
+    protected override void FixedUpdate()
     {
+        base.FixedUpdate();
+        
         UpdateRotation();
         _stateMachine.PhysicsUpdate();
-    }
-
-    private void OnAnimatorMove()
-    {
-        _animator.ApplyBuiltinRootMotion();
-        _moveDirection = _animator.deltaPosition;
-    }
-
-    public void GetMoveDirectionOfTarget()
-    {
-        
+        SyncAgentPosition();
     }
 
     #endregion

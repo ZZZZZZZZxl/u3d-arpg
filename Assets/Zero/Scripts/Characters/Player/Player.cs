@@ -2,7 +2,7 @@
 using GGG.Tool;
 using UnityEngine;
 
-public class Player : MonoBehaviour
+public class Player : CharacterMovementBase
 {
     [SerializeField] private PlayerSO data;
     [SerializeField] private Transform weaponBase;
@@ -10,35 +10,30 @@ public class Player : MonoBehaviour
     private PlayerMovementStateMachine _movementStateMachine;
     private PlayerCombatStateMachine _combatStateMachine;
     private PlayerStateReusableData _reusableData;
-    private CharacterController _controller;
     private Transform _mainCamera;
-    private Animator _animator;
-
-    private Vector3 _moveDirection;
     
-    public CharacterController Controller => _controller;
-
     public Transform WeaponBase => weaponBase;
     public Transform WeaponTop => weaponTop;
     public PlayerSO Data => data;
     public Animator Animator => _animator;
-    public Vector3 MoveDirection => _moveDirection;
     public PlayerMovementStateMachine MovementStateMachine => _movementStateMachine;
     public PlayerCombatStateMachine CombatStateMachine => _combatStateMachine;
     public PlayerStateReusableData ReusableData => _reusableData;
     
-    private void Awake()
+    protected override void Awake()
     {
-        _mainCamera = Camera.main.transform;
-        _controller = GetComponent<CharacterController>();
+        base.Awake();
+        if (Camera.main != null) _mainCamera = Camera.main.transform;
         _animator =  GetComponent<Animator>();
         _reusableData = new PlayerStateReusableData();
         _movementStateMachine = new PlayerMovementStateMachine(this);
         _combatStateMachine = new PlayerCombatStateMachine(this);
     }
 
-    private void Start()
+
+    protected override void Start()
     {
+        base.Start();
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
         _animator.SetBool(AnimationID.EndDashID, true);
@@ -47,8 +42,9 @@ public class Player : MonoBehaviour
         ReusableData.TimeToReachTargetRotation = data.PlayerRotationData.TargetRotationReachTime;
     }
 
-    private void Update()
+    protected override void Update()
     {
+        base.Update();
         
         _animator.SetFloat(
             AnimationID.MovementId, 
@@ -64,50 +60,15 @@ public class Player : MonoBehaviour
         _combatStateMachine.Update();
     }
 
-    private void FixedUpdate()
+    protected override void FixedUpdate()
     {
+        base.FixedUpdate();
+        
         UpdateRotation();
         _movementStateMachine.PhysicsUpdate();
         _combatStateMachine.PhysicsUpdate();
     }
-
-    public void OnAnimatorMove()
-    {
-        _animator.ApplyBuiltinRootMotion();
-        _moveDirection = _animator.deltaPosition;
-    }
     
-    private void OnDrawGizmos()
-    {
-        if (WeaponBase == null || WeaponTop == null) return;
-
-        Vector3 start = WeaponBase.position + (WeaponTop.position - WeaponBase.position) / 3;
-        Vector3 end = WeaponTop.position;
-        float radius = 0.1f;
-
-        Gizmos.color = Color.red;
-
-        // 两端的圆
-        Gizmos.DrawWireSphere(start, radius);
-        Gizmos.DrawWireSphere(end, radius);
-
-        // 简单画侧边线表示圆柱
-        Vector3 dir = (end - start).normalized;
-        Vector3 cross = Vector3.Cross(dir, Vector3.up);
-        if (cross == Vector3.zero)
-            cross = Vector3.Cross(dir, Vector3.right);
-        cross = cross.normalized * radius;
-
-        Vector3 offset1 = cross;
-        Vector3 offset2 = -cross;
-        Vector3 offset3 = Vector3.Cross(dir, cross).normalized * radius;
-        Vector3 offset4 = -offset3;
-
-        Gizmos.DrawLine(start + offset1, end + offset1);
-        Gizmos.DrawLine(start + offset2, end + offset2);
-        Gizmos.DrawLine(start + offset3, end + offset3);
-        Gizmos.DrawLine(start + offset4, end + offset4);
-    }
 
     #region RecevieHit
 
