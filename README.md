@@ -16,16 +16,15 @@
 - 基于 **CharacterController** 实现角色移动与碰撞处理，并扩展了攻击过程中的目标吸附、撞墙修正与重力逻辑
 - 为敌人构建 **巡逻 / 索敌 / 追击 / 返回 / 攻击 / 受击** 等 AI 状态，并结合 **NavMeshAgent** 实现寻路意图与实际位移解耦
 - 使用 **ScriptableObject** 管理角色战斗参数、AI 行为参数和血量等配置，提升系统可扩展性与调参效率
-- 集成 **Cinemachine、Input System、URP**，完成第三人称动作相机、输入映射和基础渲染表现搭建
+- 集成 **Cinemachine、Input System、URP**，完成第三人称动作相机、输入映射等基础应用
 
 ## 主要技术
 
-- Unity 2022.3 LTS
+- FSM状态机
 - C#
-- Animator / Animation Event / Root Motion
+- Animator / Animation Event
 - CharacterController
-- NavMesh / AI Navigation
-- Cinemachine
+- NavMesh Agent
 - Input System
 - ScriptableObject
 - URP
@@ -37,13 +36,13 @@
 
 - 将玩家逻辑拆分为 **移动状态机** 与 **战斗状态机** 两套状态系统
 - 通过动画事件驱动攻击窗口、伤害结算与状态切换
-- 使用 Root Motion 作为主要位移来源，使攻击与位移动作更加贴合动画节奏
+- 使用 Root Motion + CharacterController，使攻击与位移动作更加贴合动画节奏
 - 在攻击逻辑中加入了 **目标位置修正** 与 **贴墙修正**，降低挥刀穿模和攻击错位问题
 
 ### 2. 敌人 AI 与导航系统
 
 - 敌人具备基础的 **索敌、巡逻、追击、返回、攻击、受击** 行为
-- 将 **NavMeshAgent** 作为“路径与方向决策层”，不直接驱动角色 transform
+- 将 **NavMeshAgent** 作为“路径与方向决策层”，为敌人提供移动方向，但不直接驱动敌人 transform变化
 - 实际位移仍由动画位移与 CharacterController 执行，从而减少寻路速度与动画步幅不一致带来的漂移感
 - 在敌人攻击状态中补充了 **目标修正** 与 **近墙攻击修正**，使近距离战斗表现更稳定
 
