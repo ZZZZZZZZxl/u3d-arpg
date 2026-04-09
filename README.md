@@ -6,9 +6,8 @@
 
 ## 演示视频
 
-<video src="./docs/demo.mp4" controls width="100%"></video>
+[点击这里查看视频](https://drive.google.com/file/d/18sT-Mwd_vxWke6JC_7ic7QD9vl4Pot29/view?usp=drive_link)
 
-如果当前页面未直接显示视频，可点击查看：[演示视频](./docs/demo.mp4)
 
 ## 项目亮点
 
