@@ -16,7 +16,7 @@ public class PlayerMovementState : IState
 
     public virtual void Enter()
     {
-        // DevelopmentToos.WTF(GetType().Name);
+        DevelopmentToos.WTF(GetType().Name);
         SetAnimatorParameters();
     }
 

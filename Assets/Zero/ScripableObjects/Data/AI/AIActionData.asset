@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _detectionDistance: 15
   _attackDistance: 2
-  _attackColdTime: 1000
+  _attackColdTime: 8
   _enemyIdleData:
     _timeToPatrol: 5
   _enemyPatrolData:

@@ -6,7 +6,7 @@ using UnityEngine;
 public class PlayerCombatController : MonoBehaviour
 {
     private Player _player;
-    public Transform _currentEnemy => _player.ReusableData.CurrentEnemy;
+    public Transform CurrentEnemy => _player.ReusableData.CurrentEnemy;
     
     private void OnEnable()
     {
@@ -33,7 +33,6 @@ public class PlayerCombatController : MonoBehaviour
         if (!_player.ReusableData.CanChangeEnemy)
             return ;
 
-        
         
         Vector3 origin = transform.position + transform.up * 0.7f;
         origin += _player.ReusableData.DetectionDirectrion * _player.Data.CombatData.DetectionRadius; 
@@ -112,26 +111,25 @@ public class PlayerCombatController : MonoBehaviour
 
     #region ClearEnemy
 
-    private void ClearEnemy()
+    private void  ClearEnemy()
     {
-        // if (_player.ReusableData.CurrentEnemy == null)
-        //     return;
-        //
-        // if (!_player.ReusableData.CanChangeEnemy)
-        //     return;
-        //
-        // if (DevelopmentToos.DistanceForTarget(_player.ReusableData.CurrentEnemy, transform) > _player.Data.CombatData.MaxDetectionDistance)
-        // {
-        //     _player.ReusableData.CurrentEnemy = null;
-        //     return;
-        // }
-        //
-        // // 正在移动，且移动的方向里没有当前目标
-        // if (DevelopmentToos.GetAngleForTargetDirection(_player.ReusableData.CurrentEnemy, transform) > 80f)
-        // {
-        //     _player.ReusableData.CurrentEnemy = null;
-        //     DevelopmentToos.WTF("Loss Enemy");
-        // }
+        if (_player.ReusableData.CurrentEnemy == null)
+            return;
+        
+        if (!_player.ReusableData.CanChangeEnemy)
+            return;
+        
+        if (DevelopmentToos.DistanceForTarget(_player.ReusableData.CurrentEnemy, transform) > _player.Data.CombatData.MaxDetectionDistance)
+        {
+            _player.ReusableData.CurrentEnemy = null;
+            return;
+        }
+        
+        // 正在移动，且移动的方向里没有当前目标
+        if (DevelopmentToos.GetAngleForTargetDirection(_player.ReusableData.CurrentEnemy, transform) > 80f)
+        {
+            _player.ReusableData.CurrentEnemy = null;
+        }
     }
 
     #endregion
