@@ -4,7 +4,7 @@
 
 ## 演示视频
 
-[点击这里查看视频](https://drive.google.com/file/d/18sT-Mwd_vxWke6JC_7ic7QD9vl4Pot29/view?usp=drive_link)
+[点击这里查看视频](https://youtu.be/aJLQZP_k4_A)
 
 
 ## 项目亮点
